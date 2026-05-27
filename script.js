@@ -3,6 +3,24 @@ const itemInput = document.getElementById('item-input');
 const itemForm = document.getElementById('item-form');
 const clearBtn = document.getElementById('clear');
 const filter = document.getElementById('filter');
+const formBtn = itemForm.querySelector('.btn');
+let isEdit = false;
+
+function getDataFromStorage(){
+  let itemListArray;
+  if(localStorage.getItem('items') === null){
+    itemListArray = [];
+  }else{
+    itemListArray = JSON.parse(localStorage.getItem("items"));
+  }
+  return itemListArray;
+}
+
+function loadData(){
+  const items = getDataFromStorage();
+  items.forEach((item) => addItemsToDOM(item));
+  checkUI();
+}
 
 function onItemAddSumbit(e){
   e.preventDefault();
@@ -11,6 +29,19 @@ function onItemAddSumbit(e){
   if(value === ''){
     alert("Please enter a value");
     return;
+  }
+
+  if(isEdit){
+    const itemToEdit = itemList.querySelector('.edit-mode');
+    itemToEdit.remove();
+    itemToEdit.classList.remove('edit-mode');
+    updateStorage(itemToEdit.textContent);
+    checkUI();
+  }else{
+    if(checkAlreadyExists(value)){
+      alert('Already exists!!');
+      return;
+    }
   }
   
   addItemsToDOM(value);
@@ -55,13 +86,29 @@ function createIcon(classes){
 function onClickRemove(e){
   if(e.target.parentElement.classList.contains('remove-item')){
     removeItem(e.target.parentElement.parentElement);
+  }else if((e.target.querySelectorAll('li')).length === 0){
+    enableEditMode(e.target);
   }
+}
+
+function enableEditMode(target){
+  itemList.querySelectorAll('li').forEach(i => i.classList.remove('edit-mode'));
+  isEdit = true;
+  target.classList.add('edit-mode');
+  formBtn.innerHTML = '<i class="fa-solid fa-pen"></i> Update item';
+  formBtn.style.backgroundColor = '#32a84e';
+  itemInput.value = target.textContent;
+}
+
+function checkAlreadyExists(item){
+  const items = getDataFromStorage();
+  return items.includes(item);
 }
 
 function removeItem(item){
   if(confirm("Are you sure?")){
       item.remove();
-      updateStorage(item.firstChild.textContent);
+      updateStorage(item.textContent);
       checkUI();
     }
 }
@@ -87,22 +134,6 @@ function filterListItems(e){
   });
 }
 
-function getDataFromStorage(){
-  let itemListArray;
-  if(localStorage.getItem('items') === null){
-    itemiLstArray = [];
-  }else{
-    itemListArray = JSON.parse(localStorage.getItem("items"));
-  }
-  return itemListArray;
-}
-
-function loadData(){
-  const items = getDataFromStorage();
-  items.forEach((item) => addItemsToDOM(item));
-  checkUI();
-}
-
 function updateStorage(value){
   let items = getDataFromStorage();
   items = items.filter((item) => item !== value);
@@ -118,6 +149,10 @@ function checkUI(){
     clearBtn.style.display = 'block';
     filter.style.display = 'block';
   }
+  isEdit = false;
+  formBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add item';
+  formBtn.style.backgroundColor = '#333';
+  itemInput.value = '';
 }
 
 function init(){
